@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
-    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
@@ -13,20 +13,18 @@
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Vector" translatesAutoresizingMaskIntoConstraints="NO" id="xox-Jp-XO3">
-                                <rect key="frame" x="170.5" y="424.5" width="73" height="75.5"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Vector" translatesAutoresizingMaskIntoConstraints="NO" id="xox-Jp-XO3">
+                                <rect key="frame" x="159" y="387" width="75" height="78"/>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" red="0.10196078431372549" green="0.10588235294117647" blue="0.13333333333333333" alpha="1" colorSpace="custom" customColorSpace="calibratedRGB"/>
                         <constraints>
-                            <constraint firstItem="xox-Jp-XO3" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="328.5" id="7y4-R8-r4g"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="xox-Jp-XO3" secondAttribute="trailing" constant="170.5" id="CnZ-Az-3hP"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="xox-Jp-XO3" secondAttribute="bottom" constant="328" id="GN4-ob-wwE"/>
-                            <constraint firstItem="xox-Jp-XO3" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="170.5" id="N0h-Ah-36P"/>
+                            <constraint firstItem="xox-Jp-XO3" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="QjV-DH-xyn"/>
+                            <constraint firstItem="xox-Jp-XO3" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="fgW-7E-fir"/>
                         </constraints>
                     </view>
                 </viewController>
