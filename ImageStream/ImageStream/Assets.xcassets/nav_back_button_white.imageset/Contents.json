@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "Vector.png",
+      "filename" : "nav_back_button_white.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "Vector-2.png",
+      "filename" : "nav_back_button_white@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "Vector-3.png",
+      "filename" : "nav_back_button_white@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
