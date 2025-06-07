@@ -43,8 +43,8 @@ final class SingleImageViewController: UIViewController {
         view.layoutIfNeeded()
         let visibleRectSize = scrollView.bounds.size
         let imageSize = image.size
-        let hScale = visibleRectSize.width / imageSize.width
-        let vScale = visibleRectSize.height / imageSize.height
+        let hScale = imageSize.width == 0 ? 1 : visibleRectSize.width / imageSize.width
+        let vScale = imageSize.height == 0 ? 1 : visibleRectSize.height / imageSize.height
         let scale = max(minZoomScale, min(maxZoomScale, max(hScale, vScale)))
         scrollView.setZoomScale(scale, animated: false)
         scrollView.layoutIfNeeded()
