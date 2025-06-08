@@ -44,7 +44,7 @@ final class ProfileViewController: UIViewController {
 
     private func configureAvatarImageView(_ imageView: UIImageView) {
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = UIImage(named: "avatar")
+        imageView.image = UIImage(named: "Avatar")
         imageView.layer.cornerRadius = 35
         imageView.clipsToBounds = true
     }
