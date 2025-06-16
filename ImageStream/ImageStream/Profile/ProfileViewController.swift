@@ -9,6 +9,7 @@ final class ProfileViewController: UIViewController {
 
     init() {
         super.init(nibName: nil, bundle: nil)
+        self.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle"), tag: 1)
     }
 
     required init?(coder: NSCoder) {
