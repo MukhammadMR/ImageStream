@@ -2,6 +2,7 @@ import UIKit
 
 final class OAuth2Service {
     static let shared = OAuth2Service()
+    private init() {}
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
         guard let url = URL(string: "https://unsplash.com/oauth/token") else {
             assertionFailure("Failed to create token URL")
@@ -13,9 +14,9 @@ final class OAuth2Service {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
         let parameters = [
-            "client_id": "VKPukYIfL9RnIEHazAuOXyUG-phr-joygIHzml9otGc",
-            "client_secret": "hloHo6PhLiF8DUJc8TTxzlAIee5o9TB2tEv8yhNEnAc",
-            "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+            "client_id": Constants.accessKey,
+            "client_secret": Constants.secretKey,
+            "redirect_uri": Constants.redirectURI,
             "code": code,
             "grant_type": "authorization_code"
         ]
@@ -26,53 +27,30 @@ final class OAuth2Service {
 
         request.httpBody = bodyString.data(using: .utf8)
         
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
+        _ = URLSession.shared.data(for: request) { result in
+            switch result {
+            case .success((let data, _)):
+                print("Received token response: \(String(data: data, encoding: .utf8) ?? "")")
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.dateDecodingStrategy = .secondsSince1970
+                    let tokenResponse = try decoder.decode(OAuth2Token.self, from: data)
+                    let tokenStorage = OAuth2TokenStorage()
+                    DispatchQueue.main.async {
+                        tokenStorage.token = tokenResponse.accessToken
+                        completion(.success(tokenResponse.accessToken))
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        completion(.failure(error))
+                    }
                 }
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "InvalidResponse", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "HTTPError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP status code: \(httpResponse.statusCode)"])))
-                }
-                return
-            }
-
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "NoData", code: 0, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                }
-                return
-            }
-
-            print("Received token response: \(String(data: data, encoding: .utf8) ?? "")")
-            do {
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .secondsSince1970
-                let tokenResponse = try decoder.decode(OAuth2Token.self, from: data)
-                let tokenStorage = OAuth2TokenStorage()
-                tokenStorage.token = tokenResponse.accessToken
-                DispatchQueue.main.async {
-                    completion(.success(tokenResponse.accessToken))
-                }
-            } catch {
+            case .failure(let error):
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
             }
         }
-
-        task.resume()
         
     }
 }
