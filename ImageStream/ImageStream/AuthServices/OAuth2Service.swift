@@ -27,30 +27,53 @@ final class OAuth2Service {
 
         request.httpBody = bodyString.data(using: .utf8)
         
-        _ = URLSession.shared.data(for: request) { result in
-            switch result {
-            case .success((let data, _)):
-                print("Received token response: \(String(data: data, encoding: .utf8) ?? "")")
-                do {
-                    let decoder = JSONDecoder()
-                    decoder.dateDecodingStrategy = .secondsSince1970
-                    let tokenResponse = try decoder.decode(OAuth2Token.self, from: data)
-                    let tokenStorage = OAuth2TokenStorage()
-                    DispatchQueue.main.async {
-                        tokenStorage.token = tokenResponse.accessToken
-                        completion(.success(tokenResponse.accessToken))
-                    }
-                } catch {
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
-                    }
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
                 }
-            case .failure(let error):
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(NSError(domain: "InvalidResponse", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
+                }
+                return
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                DispatchQueue.main.async {
+                    completion(.failure(NSError(domain: "HTTPError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP status code: \(httpResponse.statusCode)"])))
+                }
+                return
+            }
+
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(NSError(domain: "NoData", code: 0, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                }
+                return
+            }
+
+            print("Received token response: \(String(data: data, encoding: .utf8) ?? "")")
+            do {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .secondsSince1970
+                let tokenResponse = try decoder.decode(OAuth2Token.self, from: data)
+                DispatchQueue.main.async {
+                    let tokenStorage = OAuth2TokenStorage()
+                    tokenStorage.token = tokenResponse.accessToken
+                    completion(.success(tokenResponse.accessToken))
+                }
+            } catch {
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
             }
         }
+
+        task.resume()
         
     }
 }
