@@ -1,19 +1,48 @@
+import Foundation
 import UIKit
+import Kingfisher
 
 final class ProfileViewController: UIViewController {
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupUI()
-    }
+    private let nameLabel = UILabel()
+    private let loginNameLabel = UILabel()
+    private let descriptionLabel = UILabel()
+    private let avatarImageView = UIImageView()
+    private var profileImageServiceObserver: NSObjectProtocol?
 
-    init() {
-        super.init(nibName: nil, bundle: nil)
-        self.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle"), tag: 1)
+    override init(nibName: String?, bundle: Bundle?) {
+        super.init(nibName: nibName, bundle: bundle)
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+    }
+
+    deinit {
+        if let observer = profileImageServiceObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+
+        profileImageServiceObserver = NotificationCenter.default.addObserver(
+            forName: ProfileImageService.didChangeNotification,
+            object: nil,
+            queue: .main,
+            using: { [weak self] _ in
+                self?.updateAvatar()
+            })
+
+        updateAvatar()
+    }
+
+    private func updateAvatar() {
+        guard let avatarURLString = ProfileImageService.shared.avatarURL,
+              let url = URL(string: avatarURLString) else { return }
+        avatarImageView.kf.setImage(with: url, placeholder: UIImage(named: "Avatar"))
     }
 
     @objc private func didTapLogoutButton() {
@@ -21,10 +50,6 @@ final class ProfileViewController: UIViewController {
     }
 
     private func setupUI() {
-        let avatarImageView = UIImageView()
-        let nameLabel = UILabel()
-        let loginNameLabel = UILabel()
-        let descriptionLabel = UILabel()
         let logoutButton = UIButton(type: .system)
 
         view.backgroundColor = UIColor(named: "YPBackground") ?? UIColor(red: 26/255, green: 27/255, blue: 34/255, alpha: 1)

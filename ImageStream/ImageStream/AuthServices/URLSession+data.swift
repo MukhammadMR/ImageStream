@@ -4,6 +4,8 @@ enum NetworkError: Error {
     case httpStatusCode(Int)
     case urlRequestError(Error)
     case urlSessionError
+    case invalidRequest
+    case noData
 }
 
 extension URLSession {
@@ -17,5 +19,44 @@ extension URLSession {
         } else {
             throw NetworkError.httpStatusCode(httpResponse.statusCode)
         }
+    }
+    
+    func objectTask<T: Decodable>(
+        for request: URLRequest,
+        completion: @escaping (Result<T, Error>) -> Void
+    ) -> URLSessionTask {
+        let task = self.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("[objectTask]: urlRequestError - \(error.localizedDescription)")
+                    completion(.failure(NetworkError.urlRequestError(error)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    print("[objectTask]: urlSessionError - response is nil")
+                    completion(.failure(NetworkError.urlSessionError))
+                    return
+                }
+                guard let data = data else {
+                    print("[objectTask]: noData")
+                    completion(.failure(NetworkError.noData))
+                    return
+                }
+                if (200 ..< 300).contains(httpResponse.statusCode) {
+                    let decoder = JSONDecoder()
+                    do {
+                        let object = try decoder.decode(T.self, from: data)
+                        completion(.success(object))
+                    } catch {
+                        print("[objectTask]: Ошибка декодирования: \(error.localizedDescription), Данные: \(String(data: data, encoding: .utf8) ?? "")")
+                        completion(.failure(error))
+                    }
+                } else {
+                    print("[objectTask]: httpStatusCode - \(httpResponse.statusCode)")
+                    completion(.failure(NetworkError.httpStatusCode(httpResponse.statusCode)))
+                }
+            }
+        }
+        return task
     }
 }

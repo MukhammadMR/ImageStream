@@ -1,10 +1,3 @@
-//
-//  SceneDelegate.swift
-//  ImageStream
-//
-//  Created by Мухаммад Махмудов on 24.05.2025.
-//
-
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
@@ -14,17 +7,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
+        let window = UIWindow(windowScene: windowScene)
+        let storage = OAuth2TokenStorage()
 
-        window = UIWindow(windowScene: windowScene)
+        print("Token at launch: \(String(describing: storage.token))")
 
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-
-        guard let authNavController = storyboard.instantiateInitialViewController() else {
-            return
+        if let token = storage.token, !token.isEmpty {
+            let tabBarController = TabBarController()
+            window.rootViewController = tabBarController
+        } else {
+            let splashViewController = SplashViewController()
+            window.rootViewController = splashViewController
         }
-        
-        window?.rootViewController = authNavController
-        window?.makeKeyAndVisible()
+        self.window = window
+        window.makeKeyAndVisible()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
