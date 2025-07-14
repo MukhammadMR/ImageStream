@@ -3,7 +3,7 @@ import ProgressHUD
 
 final class UIBlockingProgressHUD {
     private static var window: UIWindow? {
-        return UIApplication.shared
+        UIApplication.shared
             .connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }

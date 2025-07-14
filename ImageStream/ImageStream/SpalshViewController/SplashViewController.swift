@@ -11,8 +11,8 @@ final class SplashViewController: UIViewController {
     private let showAuthenticationScreenSegueIdentifier = "ShowAuthenticationScreen"
 
     private let oauth2Service = OAuth2Service.shared
-    private let oauth2TokenStorage = OAuth2TokenStorage()
-    private let profileService = ProfileService()
+    private let oauth2TokenStorage = OAuth2TokenStorage.shared
+    private let profileService = ProfileService.shared
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -59,7 +59,8 @@ final class SplashViewController: UIViewController {
     private func showAuthScreen() {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         guard let authVC = storyboard.instantiateViewController(withIdentifier: "AuthViewController") as? AuthViewController else {
-            fatalError("AuthViewController not found in Main storyboard")
+            assertionFailure("AuthViewController not found in Main storyboard")
+            return
         }
         authVC.delegate = self
         authVC.modalPresentationStyle = .fullScreen

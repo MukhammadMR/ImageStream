@@ -25,7 +25,7 @@ extension URLSession {
         for request: URLRequest,
         completion: @escaping (Result<T, Error>) -> Void
     ) -> URLSessionTask {
-        let task = self.dataTask(with: request) { data, response, error in
+        let task = dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     print("[objectTask]: urlRequestError - \(error.localizedDescription)")

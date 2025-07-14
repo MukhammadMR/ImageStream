@@ -19,8 +19,12 @@ final class OAuth2Service {
         currentTask?.cancel()
         currentCode = code
 
+        enum HTTPMethod: String {
+            case post = "POST"
+        }
+
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = HTTPMethod.post.rawValue
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
         let parameters = [
@@ -38,7 +42,7 @@ final class OAuth2Service {
             self.currentTask = nil
             switch result {
             case .success(let tokenResponse):
-                let tokenStorage = OAuth2TokenStorage()
+                let tokenStorage = OAuth2TokenStorage.shared
                 tokenStorage.token = tokenResponse.accessToken
                 completion(.success(tokenResponse.accessToken))
             case .failure(let error):
