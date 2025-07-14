@@ -3,16 +3,30 @@ import UIKit
 final class OAuth2Service {
     static let shared = OAuth2Service()
     private init() {}
+    private var currentCode: String?
+    private var currentTask: URLSessionTask?
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
         guard let url = URL(string: "https://unsplash.com/oauth/token") else {
             assertionFailure("Failed to create token URL")
             return
         }
-        
+
+        if currentTask != nil {
+            print("Another token request is already in progress.")
+            return
+        }
+
+        currentTask?.cancel()
+        currentCode = code
+
+        enum HTTPMethod: String {
+            case post = "POST"
+        }
+
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = HTTPMethod.post.rawValue
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        
+
         let parameters = [
             "client_id": Constants.accessKey,
             "client_secret": Constants.secretKey,
@@ -20,61 +34,23 @@ final class OAuth2Service {
             "code": code,
             "grant_type": "authorization_code"
         ]
-
-        let bodyString = parameters
-            .map { "\($0.key)=\($0.value)" }
-            .joined(separator: "&")
-
+        let bodyString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
         request.httpBody = bodyString.data(using: .utf8)
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
-                }
-                return
-            }
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "InvalidResponse", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
-                }
-                return
-            }
-            
-            guard (200...299).contains(httpResponse.statusCode) else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "HTTPError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP status code: \(httpResponse.statusCode)"])))
-                }
-                return
-            }
-
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "NoData", code: 0, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                }
-                return
-            }
-
-            print("Received token response: \(String(data: data, encoding: .utf8) ?? "")")
-            do {
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .secondsSince1970
-                let tokenResponse = try decoder.decode(OAuth2Token.self, from: data)
-                DispatchQueue.main.async {
-                    let tokenStorage = OAuth2TokenStorage()
-                    tokenStorage.token = tokenResponse.accessToken
-                    completion(.success(tokenResponse.accessToken))
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
-                }
+        currentTask = URLSession.shared.objectTask(for: request) { [weak self] (result: Result<OAuth2Token, Error>) in
+            guard let self = self else { return }
+            self.currentTask = nil
+            switch result {
+            case .success(let tokenResponse):
+                let tokenStorage = OAuth2TokenStorage.shared
+                tokenStorage.token = tokenResponse.accessToken
+                completion(.success(tokenResponse.accessToken))
+            case .failure(let error):
+                print("[OAuth2Service][fetchOAuthToken]: \(error.localizedDescription), code: \(code)")
+                completion(.failure(error))
             }
         }
-
-        task.resume()
-        
+        currentTask?.resume()
     }
 }
 
