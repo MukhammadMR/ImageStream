@@ -10,6 +10,7 @@ final class SingleImageViewController: UIViewController {
             rescaleAndCenterImageInScrollView(image: image)
         }
     }
+    var imageURL: URL?
     
     @IBOutlet var imageView: UIImageView!
     @IBAction private func didTapBackButton() {
