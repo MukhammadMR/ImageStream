@@ -7,16 +7,16 @@ final class ImagesListService {
     private(set) var photos: [Photo] = []
 
     private var isFetching = false
-    private var currentPage = 0
+    private var lastLoadedPage: Int?
 
     func fetchPhotosNextPage() {
         guard !isFetching else { return }
         isFetching = true
-        currentPage += 1
+        let nextPage = (lastLoadedPage ?? 0) + 1
 
         let token = OAuth2TokenStorage.shared.token ?? ""
 
-        guard let url = URL(string: "https://api.unsplash.com/photos?page=\(currentPage)") else {
+        guard let url = URL(string: "https://api.unsplash.com/photos?page=\(nextPage)") else {
             isFetching = false
             return
         }
@@ -26,9 +26,9 @@ final class ImagesListService {
         request.httpMethod = "GET"
 
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
-            defer { self?.isFetching = false }
-
+            guard let self = self else { return }
             guard let data = data, error == nil else {
+                self.isFetching = false
                 print("Ошибка загрузки фото:", error ?? "Unknown error")
                 return
             }
@@ -39,10 +39,13 @@ final class ImagesListService {
                 let newPhotos = photoResults.map { Photo(from: $0) }
 
                 DispatchQueue.main.async {
-                    self?.photos.append(contentsOf: newPhotos)
+                    self.photos.append(contentsOf: newPhotos)
+                    self.lastLoadedPage = nextPage
+                    self.isFetching = false
                     NotificationCenter.default.post(name: ImagesListService.didChangeNotification, object: nil)
                 }
             } catch {
+                self.isFetching = false
                 print("Ошибка декодирования фото:", error)
             }
         }
@@ -55,21 +58,36 @@ struct PhotoResult: Codable {
     let createdAt: String?
     let width: Int
     let height: Int
+    let color: String?
+    let blurHash: String?
+    let likes: Int?
+    let likedByUser: Bool
     let description: String?
     let urls: UrlsResult
-    let likedByUser: Bool
+    let user: UserResult?
 
     enum CodingKeys: String, CodingKey {
         case id
         case createdAt = "created_at"
-        case width, height, description, urls
+        case width, height, color
+        case blurHash = "blur_hash"
+        case likes
         case likedByUser = "liked_by_user"
+        case description, urls, user
     }
 }
 
 struct UrlsResult: Codable {
-    let thumb: String
+    let raw: String
     let full: String
+    let regular: String
+    let small: String
+    let thumb: String
+}
+
+struct UserResult: Codable {
+    let name: String?
+    let username: String?
 }
 
 struct Photo {
