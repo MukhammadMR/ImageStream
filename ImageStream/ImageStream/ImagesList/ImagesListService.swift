@@ -1,4 +1,3 @@
-
 import Foundation
 
 final class ImagesListService {
@@ -51,6 +50,57 @@ final class ImagesListService {
             }
         }
         task.resume()
+    }
+    
+    func changeLike(photoId: String, isLike: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
+        let token = OAuth2TokenStorage.shared.token?.description ?? ""
+        let urlString = "https://api.unsplash.com/photos/\(photoId)/like"
+        
+        guard let url = URL(string: urlString) else {
+            DispatchQueue.main.async {
+                completion(.failure(NSError(domain: "Invalid URL", code: 0)))
+            }
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpMethod = isLike ? "POST" : "DELETE"
+        
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+                return
+            }
+            
+            DispatchQueue.main.async {
+                if let index = self.photos.firstIndex(where: { $0.id == photoId }) {
+                    let photo = self.photos[index]
+                    let newPhoto = Photo(
+                        id: photo.id,
+                        size: photo.size,
+                        createdAt: photo.createdAt,
+                        welcomeDescription: photo.welcomeDescription,
+                        thumbImageURL: photo.thumbImageURL,
+                        largeImageURL: photo.largeImageURL,
+                        isLiked: !photo.isLiked
+                    )
+                    self.photos[index] = newPhoto
+                    NotificationCenter.default.post(name: ImagesListService.didChangeNotification, object: self)
+                }
+                completion(.success(()))
+            }
+        }
+        task.resume()
+    }
+    func reset() {
+        photos = []
+        lastLoadedPage = nil
+        isFetching = false
     }
 }
 
@@ -114,6 +164,22 @@ struct Photo {
         self.largeImageURL = photoResult.urls.full
         self.isLiked = photoResult.likedByUser
     }
+    
+    init(
+        id: String,
+        size: CGSize,
+        createdAt: Date?,
+        welcomeDescription: String?,
+        thumbImageURL: String,
+        largeImageURL: String,
+        isLiked: Bool
+    ) {
+        self.id = id
+        self.size = size
+        self.createdAt = createdAt
+        self.welcomeDescription = welcomeDescription
+        self.thumbImageURL = thumbImageURL
+        self.largeImageURL = largeImageURL
+        self.isLiked = isLiked
+    }
 }
-
-

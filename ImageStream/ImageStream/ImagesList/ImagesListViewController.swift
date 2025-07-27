@@ -32,15 +32,8 @@ final class ImagesListViewController: UIViewController {
     }
     
     @objc private func updateTableViewAnimated() {
-        let oldCount = photos.count
-        let newCount = ImagesListService.shared.photos.count
         photos = ImagesListService.shared.photos
-        if oldCount != newCount {
-            tableView.performBatchUpdates {
-                let indexPaths = (oldCount..<newCount).map { IndexPath(row: $0, section: 0) }
-                tableView.insertRows(at: indexPaths, with: .automatic)
-            } completion: { _ in }
-        }
+        tableView.reloadData()
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -75,6 +68,7 @@ extension ImagesListViewController: UITableViewDataSource {
         }
 
         configCell(for: imageListCell, with: indexPath)
+        imageListCell.delegate = self
 
         return imageListCell
     }
@@ -109,6 +103,33 @@ extension ImagesListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if indexPath.row + 1 == photos.count {
             ImagesListService.shared.fetchPhotosNextPage()
+        }
+    }
+}
+
+extension ImagesListViewController: ImagesListCellDelegate {
+    func imageListCellDidTapLike(_ cell: ImagesListCell) {
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        let photo = photos[indexPath.row]
+
+        UIBlockingProgressHUD.show()
+
+        ImagesListService.shared.changeLike(photoId: photo.id, isLike: !photo.isLiked) { [weak self] result in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self.photos = ImagesListService.shared.photos
+                    self.tableView.reloadRows(at: [indexPath], with: .none)
+                    UIBlockingProgressHUD.dismiss()
+                case .failure(let error):
+                    UIBlockingProgressHUD.dismiss()
+                    print("Failed to change like: \(error)")
+                    let alert = UIAlertController(title: "Ошибка", message: "Не удалось поставить лайк. Попробуйте позже.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "ОК", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
         }
     }
 }

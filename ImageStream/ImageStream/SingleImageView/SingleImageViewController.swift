@@ -6,7 +6,6 @@ final class SingleImageViewController: UIViewController {
             guard isViewLoaded, let image else { return }
             
             imageView.image = image
-            imageView.frame.size = image.size
             rescaleAndCenterImageInScrollView(image: image)
         }
     }
@@ -22,11 +21,36 @@ final class SingleImageViewController: UIViewController {
         super.viewDidLoad()
         scrollView.minimumZoomScale = 0.1
         scrollView.maximumZoomScale = 1.25
-        
-        guard let image else { return }
-        imageView.image = image
-        imageView.frame.size = image.size
-        rescaleAndCenterImageInScrollView(image: image)
+        loadImage()
+    }
+    private func loadImage() {
+        guard let imageURL else { return }
+
+        UIBlockingProgressHUD.show()
+        imageView.kf.setImage(with: imageURL) { [weak self] result in
+            guard let self else { return }
+            UIBlockingProgressHUD.dismiss()
+
+            switch result {
+            case .success(let imageResult):
+                self.rescaleAndCenterImageInScrollView(image: imageResult.image)
+            case .failure:
+                self.showError()
+            }
+        }
+    }
+
+    private func showError() {
+        let alert = UIAlertController(
+            title: "Что-то пошло не так.",
+            message: "Попробовать ещё раз?",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Не надо", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Повторить", style: .default) { [weak self] _ in
+            self?.loadImage()
+        })
+        present(alert, animated: true)
     }
     
     @IBAction func didTapShareButton(_ sender: UIButton) {
