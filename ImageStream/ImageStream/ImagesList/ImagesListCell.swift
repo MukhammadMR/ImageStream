@@ -18,7 +18,7 @@ final class ImagesListCell: UITableViewCell {
         cellImage.kf.indicatorType = .activity
         cellImage.kf.setImage(with: url, placeholder: UIImage(named: "placeholder"))
         dateLabel.text = dateText
-        let likeImage = isLiked ? UIImage(named: "like_button_on") : UIImage(named: "like_button_off")
+        let likeImage = isLiked ? UIImage(resource: .likeButtonOn) : UIImage(resource: .likeButtonOff)
         likeButton.setImage(likeImage, for: .normal)
     }
 

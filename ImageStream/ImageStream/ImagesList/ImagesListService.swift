@@ -1,6 +1,8 @@
 import Foundation
 
 final class ImagesListService {
+    private let decoder = JSONDecoder()
+    private init() {}
     static let shared = ImagesListService()
     static let didChangeNotification = Notification.Name("ImagesListServiceDidChange")
 
@@ -8,6 +10,13 @@ final class ImagesListService {
 
     private var isFetching = false
     private var lastLoadedPage: Int?
+
+    enum HTTPMethod: String {
+        case get = "GET"
+        case post = "POST"
+        case put = "PUT"
+        case delete = "DELETE"
+    }
 
     func fetchPhotosNextPage() {
         guard !isFetching else { return }
@@ -23,7 +32,7 @@ final class ImagesListService {
 
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpMethod = "GET"
+        request.httpMethod = HTTPMethod.get.rawValue
 
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             guard let self = self else { return }
@@ -34,8 +43,7 @@ final class ImagesListService {
             }
 
             do {
-                let decoder = JSONDecoder()
-                let photoResults = try decoder.decode([PhotoResult].self, from: data)
+                let photoResults = try self.decoder.decode([PhotoResult].self, from: data)
                 let newPhotos = photoResults.map { Photo(from: $0) }
 
                 DispatchQueue.main.async {
@@ -142,6 +150,10 @@ struct UserResult: Codable {
 }
 
 struct Photo {
+    private static let dateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        return formatter
+    }()
     let id: String
     let size: CGSize
     let createdAt: Date?
@@ -154,7 +166,7 @@ struct Photo {
         self.id = photoResult.id
         self.size = CGSize(width: photoResult.width, height: photoResult.height)
         if let createdAtString = photoResult.createdAt {
-            let formatter = ISO8601DateFormatter()
+            let formatter = Self.dateFormatter
             self.createdAt = formatter.date(from: createdAtString)
         } else {
             self.createdAt = nil
