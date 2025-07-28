@@ -9,6 +9,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
         let storage = OAuth2TokenStorage.shared
+        NotificationCenter.default.addObserver(
+            forName: .didLogout,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.switchToSplashController()
+        }
         
         print("Token at launch: \(String(describing: storage.token))")
 
@@ -24,3 +31,17 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
 }
+
+extension SceneDelegate {
+    func switchToSplashController() {
+        guard let window = self.window else { return }
+        let splashViewController = SplashViewController()
+        window.rootViewController = splashViewController
+    }
+    
+}
+
+extension Notification.Name {
+    static let didLogout = Notification.Name("didLogout")
+}
+

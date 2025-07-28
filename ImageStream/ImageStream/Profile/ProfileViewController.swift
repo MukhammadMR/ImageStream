@@ -73,8 +73,18 @@ final class ProfileViewController: UIViewController {
         descriptionLabel.text = profile.bio ?? ""
     }
 
-    @objc private func didTapLogoutButton() {
-        // TODO: logout action
+
+    @IBAction private func didTapLogoutButton(_ sender: UIButton) {
+        let alert = UIAlertController(
+            title: "Пока, пока!",
+            message: "Вы уверены, что хотите выйти?",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Отменить", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Выйти", style: .destructive) { _ in
+            ProfileLogoutService.shared.logout()
+        })
+        present(alert, animated: true)
     }
 
     private func setupUI() {
