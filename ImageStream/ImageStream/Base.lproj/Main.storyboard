@@ -234,7 +234,7 @@
         <!--Web View View Controller-->
         <scene sceneID="YGL-Lv-lF1">
             <objects>
-                <viewController id="Gek-ed-ToW" customClass="WebViewViewController" customModule="ImageStream" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="WebViewViewController" id="Gek-ed-ToW" customClass="WebViewViewController" customModule="ImageStream" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="mrX-gd-jz9">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
