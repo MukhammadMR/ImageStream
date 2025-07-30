@@ -42,14 +42,14 @@
 		2872F8DF2E3910AF00F4B202 /* Exceptions for "ImageStreamTests" folder in "ImageStream" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				WebViewPresenterSpy.swift,
+				WebView/WebViewMocks/WebViewPresenterSpy.swift,
 			);
 			target = 28D51E602DE255CF00BC2B32 /* ImageStream */;
 		};
 		2872F8E02E3910AF00F4B202 /* Exceptions for "ImageStreamTests" folder in "ImageStreamTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				WebViewPresenterSpy.swift,
+				WebView/WebViewMocks/WebViewPresenterSpy.swift,
 			);
 			target = 28D51E762DE255D100BC2B32 /* ImageStreamTests */;
 		};

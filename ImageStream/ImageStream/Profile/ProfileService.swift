@@ -1,5 +1,30 @@
 import UIKit
 
+public protocol ProfileServiceProtocol {
+    var profile: Profile? { get }
+}
+
+public struct Profile {
+    let username : String
+    let name : String
+    let loginName: String
+    let bio: String?
+    
+    init(profileResult: ProfileService.ProfileResult) {
+        self.username = profileResult.username
+        self.name = "\(profileResult.firstName) \(profileResult.lastName)"
+        self.loginName = "@\(profileResult.username)"
+        self.bio = profileResult.bio
+    }
+
+    public init(username: String, name: String, loginName: String, bio: String?) {
+        self.username = username
+        self.name = name
+        self.loginName = loginName
+        self.bio = bio
+    }
+}
+
 final class ProfileService {
     static let shared = ProfileService()
     static let profileDidUpdateNotification = Notification.Name("ProfileServiceProfileDidUpdateNotification")
@@ -43,20 +68,6 @@ final class ProfileService {
                 lastName: self.lastName,
                 bio: self.bio
             )
-        }
-    }
-    
-    struct Profile {
-        let username : String
-        let name : String
-        let loginName: String
-        let bio: String?
-        
-        init(profileResult: ProfileResult) {
-            self.username = profileResult.username
-            self.name = "\(profileResult.firstName) \(profileResult.lastName)"
-            self.loginName = "@\(profileResult.username)"
-            self.bio = profileResult.bio
         }
     }
     
