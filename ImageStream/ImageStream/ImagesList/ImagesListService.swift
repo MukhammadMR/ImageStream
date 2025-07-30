@@ -1,6 +1,13 @@
 import Foundation
 
-final class ImagesListService {
+protocol ImagesListServiceProtocol {
+    var photos: [Photo] { get }
+    func fetchPhotosNextPage(completion: @escaping (Result<Void, Error>) -> Void)
+    func changeLike(photoId: String, isLike: Bool, completion: @escaping (Result<Void, Error>) -> Void)
+    func reset()
+}
+
+final class ImagesListService: ImagesListServiceProtocol {
     private let decoder = JSONDecoder()
     private init() {}
     static let shared = ImagesListService()
@@ -18,7 +25,7 @@ final class ImagesListService {
         case delete = "DELETE"
     }
 
-    func fetchPhotosNextPage() {
+    func fetchPhotosNextPage(completion: @escaping (Result<Void, Error>) -> Void) {
         guard !isFetching else { return }
         isFetching = true
         let nextPage = (lastLoadedPage ?? 0) + 1
@@ -27,6 +34,7 @@ final class ImagesListService {
 
         guard let url = URL(string: "https://api.unsplash.com/photos?page=\(nextPage)") else {
             isFetching = false
+            completion(.failure(NSError(domain: "Invalid URL", code: 0)))
             return
         }
 
@@ -38,7 +46,7 @@ final class ImagesListService {
             guard let self = self else { return }
             guard let data = data, error == nil else {
                 self.isFetching = false
-                print("Ошибка загрузки фото:", error ?? "Unknown error")
+                completion(.failure(error ?? NSError(domain: "Unknown error", code: 0)))
                 return
             }
 
@@ -51,10 +59,11 @@ final class ImagesListService {
                     self.lastLoadedPage = nextPage
                     self.isFetching = false
                     NotificationCenter.default.post(name: ImagesListService.didChangeNotification, object: nil)
+                    completion(.success(()))
                 }
             } catch {
                 self.isFetching = false
-                print("Ошибка декодирования фото:", error)
+                completion(.failure(error))
             }
         }
         task.resume()

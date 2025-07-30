@@ -1,5 +1,11 @@
 import UIKit
 
+protocol ImagesListViewControllerProtocol: AnyObject {
+    func reloadRow(at indexPath: IndexPath)
+    func showLikeError()
+    func updateTableViewAnimated()
+}
+
 final class ImagesListViewController: UIViewController {
     private let showSingleImageSegueIdentifier = "ShowSingleImage"
     
@@ -8,7 +14,9 @@ final class ImagesListViewController: UIViewController {
     private var photos: [Photo] = []
     
     private let photosName: [String] = Array(0..<20).map{ "\($0)" }
-
+    
+    var presenter: ImagesListPresenterProtocol?
+    
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
@@ -28,13 +36,9 @@ final class ImagesListViewController: UIViewController {
             name: ImagesListService.didChangeNotification,
             object: nil
         )
-        ImagesListService.shared.fetchPhotosNextPage()
+        ImagesListService.shared.fetchPhotosNextPage { _ in }
     }
     
-    @objc private func updateTableViewAnimated() {
-        photos = ImagesListService.shared.photos
-        tableView.reloadData()
-    }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == showSingleImageSegueIdentifier {
@@ -102,7 +106,7 @@ extension ImagesListViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if indexPath.row + 1 == photos.count {
-            ImagesListService.shared.fetchPhotosNextPage()
+            ImagesListService.shared.fetchPhotosNextPage { _ in }
         }
     }
 }
@@ -110,26 +114,28 @@ extension ImagesListViewController: UITableViewDelegate {
 extension ImagesListViewController: ImagesListCellDelegate {
     func imageListCellDidTapLike(_ cell: ImagesListCell) {
         guard let indexPath = tableView.indexPath(for: cell) else { return }
-        let photo = photos[indexPath.row]
+        _ = photos[indexPath.row]
 
         UIBlockingProgressHUD.show()
+        presenter?.didTapLike(at: indexPath)
+    }
+}
 
-        ImagesListService.shared.changeLike(photoId: photo.id, isLike: !photo.isLiked) { [weak self] result in
-            guard let self else { return }
-            DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    self.photos = ImagesListService.shared.photos
-                    self.tableView.reloadRows(at: [indexPath], with: .none)
-                    UIBlockingProgressHUD.dismiss()
-                case .failure(let error):
-                    UIBlockingProgressHUD.dismiss()
-                    print("Failed to change like: \(error)")
-                    let alert = UIAlertController(title: "Ошибка", message: "Не удалось поставить лайк. Попробуйте позже.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "ОК", style: .default))
-                    self.present(alert, animated: true)
-                }
-            }
-        }
+extension ImagesListViewController: ImagesListViewControllerProtocol {
+    func reloadRow(at indexPath: IndexPath) {
+        tableView.reloadRows(at: [indexPath], with: .none)
+        UIBlockingProgressHUD.dismiss()
+    }
+
+    func showLikeError() {
+        UIBlockingProgressHUD.dismiss()
+        let alert = UIAlertController(title: "Ошибка", message: "Не удалось поставить лайк. Попробуйте позже.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "ОК", style: .default))
+        self.present(alert, animated: true)
+    }
+    
+    @objc func updateTableViewAnimated() {
+        photos = ImagesListService.shared.photos
+        tableView.reloadData()
     }
 }
