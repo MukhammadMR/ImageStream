@@ -2,6 +2,7 @@ import UIKit
 
 public protocol ProfileServiceProtocol {
     var profile: Profile? { get }
+    func fetchProfile(completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 public struct Profile {
@@ -29,7 +30,14 @@ final class ProfileService {
     static let shared = ProfileService()
     static let profileDidUpdateNotification = Notification.Name("ProfileServiceProfileDidUpdateNotification")
 
-    private init() {}
+    private let profileStorageKey = "ProfileServiceStoredProfile"
+
+    init() {
+        if let data = UserDefaults.standard.data(forKey: profileStorageKey),
+           let profileResult = try? JSONDecoder().decode(ProfileResult.self, from: data) {
+            self.profile = Profile(profileResult: profileResult)
+        }
+    }
     
     struct ProfileResult: Codable {
         let id: String
@@ -93,6 +101,9 @@ final class ProfileService {
             case .success(let profileResult):
                 let profile = Profile(profileResult: profileResult)
                 self.profile = profile
+                if let encoded = try? JSONEncoder().encode(profileResult) {
+                    UserDefaults.standard.set(encoded, forKey: self.profileStorageKey)
+                }
                 NotificationCenter.default.post(name: ProfileService.profileDidUpdateNotification, object: nil)
                 completion(.success(profile))
             case .failure(let error):
@@ -101,6 +112,21 @@ final class ProfileService {
             }
         }
         self.task?.resume()
+    }
+    
+    func fetchProfile(completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let token = OAuth2TokenStorage.shared.token else {
+            completion(.failure(NetworkError.invalidToken))
+            return
+        }
+        fetchProfile(token) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
     }
 
     private func makeRequest(token: String) -> URLRequest? {

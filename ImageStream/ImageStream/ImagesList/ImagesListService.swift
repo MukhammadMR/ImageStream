@@ -70,7 +70,9 @@ final class ImagesListService: ImagesListServiceProtocol {
     }
     
     func changeLike(photoId: String, isLike: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
-        let token = OAuth2TokenStorage.shared.token?.description ?? ""
+        print("⚠️ changeLike called for photoId: \(photoId), isLike: \(isLike)")
+        let token = OAuth2TokenStorage.shared.token ?? ""
+        print("🔐 Token used for changeLike:", token)
         let urlString = "https://api.unsplash.com/photos/\(photoId)/like"
         
         guard let url = URL(string: urlString) else {
@@ -85,11 +87,25 @@ final class ImagesListService: ImagesListServiceProtocol {
         request.httpMethod = isLike ? "POST" : "DELETE"
         
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            print("📡 Received response for like request")
             guard let self = self else { return }
             
             if let error = error {
+                print("Like request failed with error:", error)
                 DispatchQueue.main.async {
                     completion(.failure(error))
+                }
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+                print("Like request failed with status code:", httpResponse.statusCode)
+                if let data = data, let errorBody = String(data: data, encoding: .utf8) {
+                    print("Error response body:", errorBody)
+                }
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: ImagesListService.didChangeNotification, object: self)
+                    completion(.failure(NSError(domain: "HTTP error", code: httpResponse.statusCode)))
                 }
                 return
             }
@@ -107,8 +123,12 @@ final class ImagesListService: ImagesListServiceProtocol {
                         isLiked: !photo.isLiked
                     )
                     self.photos[index] = newPhoto
+                    print("✅ Updated photo at index \(index) with new isLiked = \(!photo.isLiked)")
                     NotificationCenter.default.post(name: ImagesListService.didChangeNotification, object: self)
+                } else {
+                    print("❌ Photo with id \(photoId) not found in photos array")
                 }
+                print("Like request succeeded for photoId: \(photoId)")
                 completion(.success(()))
             }
         }

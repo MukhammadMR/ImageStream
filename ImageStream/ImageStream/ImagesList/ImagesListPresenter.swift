@@ -10,13 +10,10 @@ protocol ImagesListPresenterProtocol {
 
 final class ImagesListPresenter: ImagesListPresenterProtocol {
     weak var view: ImagesListViewControllerProtocol?
-
     private let imagesListService: ImagesListServiceProtocol
-    private var photos: [Photo] {
-        return imagesListService.photos
-    }
 
-    init(imagesListService: ImagesListServiceProtocol) {
+    init(view: ImagesListViewControllerProtocol, imagesListService: ImagesListServiceProtocol) {
+        self.view = view
         self.imagesListService = imagesListService
     }
 
@@ -34,21 +31,24 @@ final class ImagesListPresenter: ImagesListPresenterProtocol {
     }
 
     func numberOfPhotos() -> Int {
-        return photos.count
+        return imagesListService.photos.count
     }
 
     func photo(at indexPath: IndexPath) -> Photo {
-        return photos[indexPath.row]
+        return imagesListService.photos[indexPath.row]
     }
 
     func didTapLike(at indexPath: IndexPath) {
-        let photo = photos[indexPath.row]
+        let photo = imagesListService.photos[indexPath.row]
+        view?.showBlockingLoading()
         imagesListService.changeLike(photoId: photo.id, isLike: !photo.isLiked) { [weak self] result in
             DispatchQueue.main.async {
+                self?.view?.hideBlockingLoading()
                 switch result {
                 case .success:
                     self?.view?.reloadRow(at: indexPath)
                 case .failure(let error):
+                    self?.view?.showLikeError()
                     print("Ошибка при лайке: \(error)")
                 }
             }

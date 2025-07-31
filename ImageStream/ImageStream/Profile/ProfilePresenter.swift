@@ -19,8 +19,17 @@ final class ProfilePresenter: ProfilePresenterProtocol {
     }
 
     func viewDidLoad() {
-        updateProfileDetails()
-        updateAvatar()
+        profileService.fetchProfile { [weak self] result in
+            switch result {
+            case .success:
+                self?.updateProfileDetails()
+            case .failure(let error):
+                print("Failed to fetch profile:", error)
+            }
+        }
+        profileImageService.fetchProfileImageURL(username: profileService.profile?.username ?? "") { [weak self] _ in
+            self?.updateAvatar()
+        }
         observeProfileImageChanges()
     }
 

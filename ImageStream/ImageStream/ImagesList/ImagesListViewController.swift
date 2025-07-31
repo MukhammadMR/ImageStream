@@ -4,6 +4,8 @@ protocol ImagesListViewControllerProtocol: AnyObject {
     func reloadRow(at indexPath: IndexPath)
     func showLikeError()
     func updateTableViewAnimated()
+    func showBlockingLoading()
+    func hideBlockingLoading()
 }
 
 final class ImagesListViewController: UIViewController {
@@ -12,8 +14,6 @@ final class ImagesListViewController: UIViewController {
     @IBOutlet private var tableView: UITableView!
     
     private var photos: [Photo] = []
-    
-    private let photosName: [String] = Array(0..<20).map{ "\($0)" }
     
     var presenter: ImagesListPresenterProtocol?
     
@@ -26,6 +26,9 @@ final class ImagesListViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        let service = ImagesListService.shared
+        presenter = ImagesListPresenter(view: self, imagesListService: service)
 
         tableView.rowHeight = 200
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
@@ -114,10 +117,9 @@ extension ImagesListViewController: UITableViewDelegate {
 extension ImagesListViewController: ImagesListCellDelegate {
     func imageListCellDidTapLike(_ cell: ImagesListCell) {
         guard let indexPath = tableView.indexPath(for: cell) else { return }
-        _ = photos[indexPath.row]
 
-        UIBlockingProgressHUD.show()
         presenter?.didTapLike(at: indexPath)
+        print("Did tap like at indexPath: \(indexPath)")
     }
 }
 
@@ -137,5 +139,13 @@ extension ImagesListViewController: ImagesListViewControllerProtocol {
     @objc func updateTableViewAnimated() {
         photos = ImagesListService.shared.photos
         tableView.reloadData()
+    }
+    
+    func showBlockingLoading() {
+        UIBlockingProgressHUD.show()
+    }
+    
+    func hideBlockingLoading() {
+        UIBlockingProgressHUD.dismiss()
     }
 }

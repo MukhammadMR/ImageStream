@@ -20,6 +20,9 @@ final class ImagesListCell: UITableViewCell {
         dateLabel.text = dateText
         let likeImage = isLiked ? UIImage(resource: .likeButtonOn) : UIImage(resource: .likeButtonOff)
         likeButton.setImage(likeImage, for: .normal)
+        cellImage.accessibilityIdentifier = "cellImage"
+        likeButton.accessibilityIdentifier = "likeButton"
+        dateLabel.accessibilityIdentifier = "ImagesListCell.dateLabel"
     }
 
     func setIsLiked(_ isLiked: Bool) {

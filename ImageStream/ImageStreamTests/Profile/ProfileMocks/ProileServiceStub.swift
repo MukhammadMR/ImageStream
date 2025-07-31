@@ -1,4 +1,3 @@
-
 import Foundation
 import ImageStream
 
@@ -9,4 +8,8 @@ final class ProfileServiceStub: ProfileServiceProtocol {
         loginName: "@stubuser",
         bio: "Stub biography"
     )
+    
+    func fetchProfile(completion: @escaping (Result<Void, Error>) -> Void) {
+        completion(.success(()))
+    }
 }
