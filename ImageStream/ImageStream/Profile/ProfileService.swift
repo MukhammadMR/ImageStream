@@ -1,10 +1,43 @@
 import UIKit
 
+public protocol ProfileServiceProtocol {
+    var profile: Profile? { get }
+    func fetchProfile(completion: @escaping (Result<Void, Error>) -> Void)
+}
+
+public struct Profile {
+    let username : String
+    let name : String
+    let loginName: String
+    let bio: String?
+    
+    init(profileResult: ProfileService.ProfileResult) {
+        self.username = profileResult.username
+        self.name = "\(profileResult.firstName) \(profileResult.lastName)"
+        self.loginName = "@\(profileResult.username)"
+        self.bio = profileResult.bio
+    }
+
+    public init(username: String, name: String, loginName: String, bio: String?) {
+        self.username = username
+        self.name = name
+        self.loginName = loginName
+        self.bio = bio
+    }
+}
+
 final class ProfileService {
     static let shared = ProfileService()
     static let profileDidUpdateNotification = Notification.Name("ProfileServiceProfileDidUpdateNotification")
 
-    private init() {}
+    private let profileStorageKey = "ProfileServiceStoredProfile"
+
+    init() {
+        if let data = UserDefaults.standard.data(forKey: profileStorageKey),
+           let profileResult = try? JSONDecoder().decode(ProfileResult.self, from: data) {
+            self.profile = Profile(profileResult: profileResult)
+        }
+    }
     
     struct ProfileResult: Codable {
         let id: String
@@ -46,20 +79,6 @@ final class ProfileService {
         }
     }
     
-    struct Profile {
-        let username : String
-        let name : String
-        let loginName: String
-        let bio: String?
-        
-        init(profileResult: ProfileResult) {
-            self.username = profileResult.username
-            self.name = "\(profileResult.firstName) \(profileResult.lastName)"
-            self.loginName = "@\(profileResult.username)"
-            self.bio = profileResult.bio
-        }
-    }
-    
     private(set) var profile: Profile?
     private var lastToken: String?
 
@@ -82,6 +101,9 @@ final class ProfileService {
             case .success(let profileResult):
                 let profile = Profile(profileResult: profileResult)
                 self.profile = profile
+                if let encoded = try? JSONEncoder().encode(profileResult) {
+                    UserDefaults.standard.set(encoded, forKey: self.profileStorageKey)
+                }
                 NotificationCenter.default.post(name: ProfileService.profileDidUpdateNotification, object: nil)
                 completion(.success(profile))
             case .failure(let error):
@@ -90,6 +112,21 @@ final class ProfileService {
             }
         }
         self.task?.resume()
+    }
+    
+    func fetchProfile(completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let token = OAuth2TokenStorage.shared.token else {
+            completion(.failure(NetworkError.invalidToken))
+            return
+        }
+        fetchProfile(token) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
     }
 
     private func makeRequest(token: String) -> URLRequest? {
