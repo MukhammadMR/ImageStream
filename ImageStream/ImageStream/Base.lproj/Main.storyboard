@@ -197,6 +197,7 @@
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Akb-6I-JtH" userLabel="Войти">
                                 <rect key="frame" x="16" y="690" width="382" height="48"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <accessibility key="accessibilityConfiguration" identifier="Authenticate"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="48" id="SFt-lP-sZU"/>
                                 </constraints>
@@ -234,7 +235,7 @@
         <!--Web View View Controller-->
         <scene sceneID="YGL-Lv-lF1">
             <objects>
-                <viewController id="Gek-ed-ToW" customClass="WebViewViewController" customModule="ImageStream" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="WebViewViewController" id="Gek-ed-ToW" customClass="WebViewViewController" customModule="ImageStream" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="mrX-gd-jz9">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -266,6 +267,9 @@
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="kTr-xw-1tP"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <accessibility key="accessibilityConfiguration" identifier="UnsplashWebView">
+                            <bool key="isElement" value="YES"/>
+                        </accessibility>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="kZf-IX-zFW" secondAttribute="bottom" id="130-Ny-mQQ"/>
                             <constraint firstItem="LcI-Om-aDt" firstAttribute="leading" secondItem="kTr-xw-1tP" secondAttribute="leading" id="ELU-cB-GA6"/>

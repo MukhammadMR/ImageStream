@@ -1,3 +1,10 @@
+public protocol WebViewViewControllerProtocol: AnyObject {
+    var presenter: WebViewPresenterProtocol? { get set }
+    func load(request: URLRequest)
+    func setProgressValue(_ newValue: Float)
+    func setProgressHidden(_ isHidden: Bool)
+}
+
 import UIKit
 import WebKit
 
@@ -6,9 +13,7 @@ protocol WebViewViewControllerDelegate: AnyObject {
     func webViewViewControllerDidCancel(_ vc: WebViewViewController)
 }
 
-final class WebViewViewController: UIViewController, WKNavigationDelegate {
-    
-    
+final class WebViewViewController: UIViewController, WKNavigationDelegate, WebViewViewControllerProtocol {
     @IBOutlet private var webView: WKWebView!
     
     @IBAction private func didTapBackButton(_ sender: Any?) {
@@ -22,27 +27,36 @@ final class WebViewViewController: UIViewController, WKNavigationDelegate {
     }
     
     @IBOutlet private var progressView: UIProgressView!
-    private var estimatedProgressObservation: NSKeyValueObservation?
     
     weak var delegate: WebViewViewControllerDelegate?
+    var presenter: WebViewPresenterProtocol?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         webView.navigationDelegate = self
-        estimatedProgressObservation = webView.observe(
-            \.estimatedProgress,
-            options: [.new]
-        ) { [weak self] _, _ in
-            self?.updateProgress()
-        }
-        
-        loadAuthView()
+        presenter?.viewDidLoad()
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
     }
 
-    private func updateProgress() {
-        progressView.progress = Float(webView.estimatedProgress)
-        progressView.isHidden = fabs(webView.estimatedProgress - 1.0) <= 0.0001
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == #keyPath(WKWebView.estimatedProgress) {
+            presenter?.didUpdateProgressValue(webView.estimatedProgress)
+        } else {
+            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+        }
+    }
+
+    deinit {
+        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+    }
+
+    func setProgressValue(_ newValue: Float) {
+        progressView.progress = newValue
+    }
+
+    func setProgressHidden(_ isHidden: Bool) {
+        progressView.isHidden = isHidden
     }
     
     private func loadAuthView() {
@@ -64,6 +78,10 @@ final class WebViewViewController: UIViewController, WKNavigationDelegate {
         let request = URLRequest(url: url)
         webView.load(request)
     }
+    
+    func load(request: URLRequest) {
+        webView.load(request)
+    }
 }
 
 enum WebViewConstants {
@@ -77,7 +95,7 @@ extension WebViewViewController {
         preferences: WKWebpagePreferences,
         decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void
     ) {
-        if let code = code(from: navigationAction) {
+        if let url = navigationAction.request.url, let code = presenter?.code(from: url) {
             DispatchQueue.main.async {
                 self.dismiss(animated: true) {
                     self.delegate?.webViewViewController(self, didAuthenticateWithCode: code)
@@ -90,11 +108,9 @@ extension WebViewViewController {
     }
 
     private func code(from navigationAction: WKNavigationAction) -> String? {
-        guard let url = navigationAction.request.url else { return nil }
-        print("Redirect URL: \(url.absoluteString)")
-        
-        let urlComponents = URLComponents(string: url.absoluteString)
-        let codeItem = urlComponents?.queryItems?.first(where: { $0.name == "code" })
-        return codeItem?.value
+        if let url = navigationAction.request.url {
+            return presenter?.code(from: url)
+        }
+        return nil
     }
 }

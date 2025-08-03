@@ -2,7 +2,19 @@ import Foundation
 import UIKit
 import Kingfisher
 
+public protocol ProfileViewControllerProtocol: AnyObject {
+    func updateProfileDetails(name: String, login: String, bio: String?)
+    func updateAvatarImage(with url: URL)
+}
+
 final class ProfileViewController: UIViewController {
+
+    private var presenter: ProfilePresenterProtocol?
+
+    func configure(_ presenter: ProfilePresenterProtocol) {
+        self.presenter = presenter
+        presenter.view = self
+    }
 
     private let nameLabel = UILabel()
     private let loginNameLabel = UILabel()
@@ -30,6 +42,7 @@ final class ProfileViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        presenter?.viewDidLoad()
         setupUI()
 
         profileImageServiceObserver = NotificationCenter.default.addObserver(
@@ -173,5 +186,17 @@ final class ProfileViewController: UIViewController {
             logoutButton.widthAnchor.constraint(equalToConstant: 44),
             logoutButton.heightAnchor.constraint(equalToConstant: 44)
         ])
+    }
+}
+
+extension ProfileViewController: ProfileViewControllerProtocol {
+    func updateProfileDetails(name: String, login: String, bio: String?) {
+        nameLabel.text = name
+        loginNameLabel.text = login
+        descriptionLabel.text = bio ?? ""
+    }
+
+    func updateAvatarImage(with url: URL) {
+        avatarImageView.kf.setImage(with: url, placeholder: UIImage(resource: .avatar))
     }
 }
